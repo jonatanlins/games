@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./style.css" />
+    <title>new-game</title>
+  </head>
+
+  <body>
+    <canvas id="screen"></canvas>
+  </body>
+
+  <script type="module">
+    import createGame from "./scripts/game.js";
+
+    const canvas = document.getElementById("screen");
+
+    const game = createGame(canvas, requestAnimationFrame, setInterval);
+
+    game.setup();
+  </script>
+</html>
