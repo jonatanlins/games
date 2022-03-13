@@ -9,6 +9,7 @@ export interface GameObject {
   sprite: string;
   width: number;
   height: number;
+  solid?: boolean;
 }
 
 export interface GameData<S> {
@@ -20,7 +21,7 @@ export interface GameData<S> {
     screen: CanvasRenderingContext2D,
     resolution: { width: number; height: number }
   ) => void;
-  commands: Record<string, (payload?: object) => void>;
+  commands: Record<string, (state: S, payload?: object) => void>;
   keyboardMap: Record<string, Command>;
 }
 
@@ -52,7 +53,7 @@ export class GameEngine<S> {
     const keyboardListener = this.createKeyboardListener();
     keyboardListener.subscribe(this.dispatchCommand.bind(this));
 
-    this.functions.setInterval(this.data.update, 1000 / 120, this.data.state);
+    this.functions.setInterval(this.data.update, 1000 / 60, this.data.state);
   }
 
   renderGraphics(screen: CanvasRenderingContext2D) {
@@ -66,7 +67,7 @@ export class GameEngine<S> {
 
   dispatchCommand(command: Command) {
     const commandFn = this.data.commands[command.type];
-    commandFn?.(command.payload);
+    commandFn?.(this.data.state, command.payload);
   }
 
   createKeyboardListener() {
