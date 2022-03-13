@@ -13,12 +13,10 @@
   </body>
 
   <script type="module">
-    import createGame from "./scripts/game.js";
+    import { createGame } from "./scripts/game.ts";
 
     const canvas = document.getElementById("screen");
 
-    const game = createGame(canvas, requestAnimationFrame, setInterval);
-
-    game.setup();
+    createGame(canvas);
   </script>
 </html>
