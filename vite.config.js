@@ -1,7 +1,12 @@
 const { resolve } = require("path");
 const { defineConfig } = require("vite");
 
-const entries = ["", "games/pac-laura", "games/laura-runner"];
+const entries = [
+  "",
+  "games/laura-runner",
+  "games/pac-laura",
+  "games/game-of-life",
+];
 
 module.exports = defineConfig({
   build: {

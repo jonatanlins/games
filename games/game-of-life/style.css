@@ -1,0 +1,14 @@
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: black;
+}
+
+#screen {
+  width: 100vmin;
+  height: auto;
+  image-rendering: pixelated;
+}
