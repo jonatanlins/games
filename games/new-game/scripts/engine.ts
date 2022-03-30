@@ -1,15 +1,18 @@
-interface Command<T = object> {
-  type: string;
-  payload?: T;
+export interface Command<T = string, P = object> {
+  type: T;
+  payload?: P;
 }
 
 export interface GameObject {
+  sprite: string;
   x: number;
   y: number;
-  sprite: string;
+  speedY?: number;
+  speedX?: number;
   width: number;
   height: number;
   solid?: boolean;
+  enemy?: boolean;
 }
 
 export interface GameData<S> {
@@ -50,10 +53,10 @@ export class GameEngine<S> {
 
     this.renderGraphics(screen);
 
-    const keyboardListener = this.createKeyboardListener();
-    keyboardListener.subscribe(this.dispatchCommand.bind(this));
+    this.createKeyboardListener();
 
-    this.functions.setInterval(this.data.update, 1000 / 60, this.data.state);
+    const frametime = 1000 / 120;
+    this.functions.setInterval(this.data.update, frametime, this.data.state);
   }
 
   renderGraphics(screen: CanvasRenderingContext2D) {
@@ -71,23 +74,15 @@ export class GameEngine<S> {
   }
 
   createKeyboardListener() {
-    const subscriptions: Array<(command: Command) => void> = [];
-
     const handleKeyPress = (event: { key: string }) => {
       const command = this.data.keyboardMap[event.key];
       if (command) {
-        subscriptions.forEach((subscription) => subscription(command));
+        this.dispatchCommand(command);
       } else {
         console.log("unhandled key", event.key);
       }
     };
 
     this.functions.addEventListener("keydown", handleKeyPress);
-
-    const subscribe = (callback: (command: Command) => void) => {
-      subscriptions.push(callback);
-    };
-
-    return { subscribe };
   }
 }

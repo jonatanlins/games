@@ -16,6 +16,17 @@ interface GameState {
 
 type Data = GameData<GameState>;
 
+const pipes: GameObject[] = Array(10)
+  .fill(0)
+  .map((_, i) => ({
+    sprite: "pipe",
+    x: (i + 3) * 5,
+    y: 0,
+    width: 1,
+    height: 5,
+    enemy: true,
+  }));
+
 const state: GameState = {
   player: {
     x: 2,
@@ -28,52 +39,38 @@ const state: GameState = {
   },
   scene: [
     { sprite: "sky", x: 0, y: 0, width: 100, height: 100 },
-    { sprite: "cloud", x: 1, y: 13.3, width: 3, height: 1 },
-    { sprite: "cloud", x: 6, y: 13, width: 3, height: 1 },
-    { sprite: "cloud", x: 11, y: 13.5, width: 3, height: 1 },
     { sprite: "grass", x: 0, y: 0, width: 100, height: 1, solid: true },
+    ...pipes,
   ],
   gameOver: false,
+};
+
+const sprites: Record<string, string> = {
+  player: "#ffffff08",
+  grass: "#ffffff00",
+  sky: "#ffffff00",
+  pipe: "#ffffff08",
+};
+
+const render: Data["render"] = (state, screen, resolution) => {
+  const shift = { x: 0, y: 0 }; // Parei aqui
+
+  const objects = [...state.scene, state.player];
+  objects.forEach((object) => {
+    drawSprite(screen, object, resolution);
+  });
+};
+
+const keyboardMap: Data["keyboardMap"] = {
+  ArrowUp: { type: "Up" },
+  w: { type: "Up" },
+  " ": { type: "Up" },
 };
 
 const commands: Data["commands"] = {
   Up: (state) => {
     state.player.speedY = 0.3;
   },
-  Down: (state) => {
-    state.player.speedY = -0.3;
-  },
-  Right: (state) => {
-    state.player.speedX = 0.1;
-  },
-  Left: (state) => {
-    state.player.speedX = -0.1;
-  },
-};
-
-const keyboardMap: Data["keyboardMap"] = {
-  ArrowUp: { type: "Up" },
-  ArrowDown: { type: "Down" },
-  ArrowLeft: { type: "Left" },
-  ArrowRight: { type: "Right" },
-  w: { type: "Up" },
-  s: { type: "Down" },
-  a: { type: "Left" },
-  d: { type: "Right" },
-};
-
-const sprites: Record<string, string> = {
-  player: "white",
-  grass: "green",
-  sky: "lightblue",
-  cloud: "white",
-};
-
-const render: Data["render"] = (state, screen, resolution) => {
-  const objects = [...state.scene, state.player];
-  objects.forEach((object) => {
-    drawSprite(screen, object, resolution);
-  });
 };
 
 const update: Data["update"] = (state) => {
@@ -81,22 +78,26 @@ const update: Data["update"] = (state) => {
     return;
   }
 
-  state.player.speedY -= 0.02;
-  state.player.speedX *= 0.9;
-  state.player.x += state.player.speedX;
-  if (detectCollision(state.player, state.scene)) {
-    state.player.x -= state.player.speedX;
-    state.player.speedX = 0;
-  }
-  state.player.y += state.player.speedY;
-  if (detectCollision(state.player, state.scene)) {
-    state.player.y -= state.player.speedY;
-    state.player.speedY = 0;
-  }
+  state.player.speedY -= 0.01;
+  state.player.speedX = 0.05;
+  moveGameObject(state.player, state.scene);
 
   if (detectCollision(state.player, state.scene)) {
     state.gameOver = true;
   }
+};
+
+const moveGameObject = (obj: GameObject, others: GameObject[]) => {
+  obj.x += obj.speedX || 0;
+  obj.y += obj.speedY || 0;
+
+  if (detectCollision(obj, others)) {
+    obj.x -= obj.speedX || 0;
+    obj.y -= obj.speedY || 0;
+    obj.speedX = 0;
+    obj.speedY = 0;
+  }
+  return obj;
 };
 
 const detectCollision = (player: GameObject, objects: GameObject[]) => {
