@@ -14,6 +14,14 @@ interface GameState {
   scene: GameObject[];
 }
 
+interface Sprite {
+  img: HTMLImageElement;
+  sX: number;
+  sY: number;
+  sWidth: number;
+  sHeight: number;
+}
+
 type Data = GameData<GameState>;
 
 const pipes: GameObject[] = Array(21)
@@ -59,11 +67,36 @@ const state: GameState = {
   gameOver: false,
 };
 
-const sprites: Record<string, string> = {
-  player: "#f00",
-  grass: "#0f0",
-  sky: "#00f",
-  pipe: "#fff",
+const spriteSheet1 = document.getElementById("sprites-01") as HTMLImageElement;
+const sprites: Record<string, Sprite> = {
+  player: {
+    img: spriteSheet1,
+    sX: 0,
+    sY: 0,
+    sWidth: 20,
+    sHeight: 20,
+  },
+  grass: {
+    img: spriteSheet1,
+    sX: 0,
+    sY: 0,
+    sWidth: 20,
+    sHeight: 20,
+  },
+  sky: {
+    img: spriteSheet1,
+    sX: 0,
+    sY: 0,
+    sWidth: 20,
+    sHeight: 20,
+  },
+  pipe: {
+    img: spriteSheet1,
+    sX: 0,
+    sY: 0,
+    sWidth: 20,
+    sHeight: 20,
+  },
 };
 
 const render: Data["render"] = (state, screen, resolution) => {
@@ -133,8 +166,14 @@ const drawSprite = (
   camera: { x: number; y: number },
   resolution: { width: number; height: number }
 ) => {
-  screen.fillStyle = sprites[obj.sprite];
-  screen.fillRect(
+  const sprite = sprites[obj.sprite];
+  if (!sprite) return;
+  screen.drawImage(
+    sprite.img,
+    sprite.sX,
+    sprite.sY,
+    sprite.sWidth,
+    sprite.sHeight,
     ((obj.x - camera.x) / 15) * resolution.width,
     ((15 - obj.y - obj.height + camera.y) / 15) * resolution.height,
     (obj.width / 15) * resolution.width,
