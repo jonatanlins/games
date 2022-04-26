@@ -16,21 +16,22 @@ interface GameState {
 
 type Data = GameData<GameState>;
 
-const pipes: GameObject[] = Array(10)
+const pipes: GameObject[] = Array(21)
   .fill(0)
-  .map((_, i) => ({
-    sprite: "pipe",
-    x: (i + 3) * 5,
-    y: 0,
-    width: 1,
-    height: 5,
-    enemy: true,
-  }));
+  .flatMap((_, i) => {
+    const pipe = { sprite: "pipe", x: (i + 2) * 7, width: 1, enemy: true };
+    const hole = Math.random() * 7 + 4;
+    const size = 2;
+    return [
+      { ...pipe, y: 0, height: hole - size },
+      { ...pipe, y: hole + size, height: 15 - hole - size },
+    ];
+  });
 
 const state: GameState = {
   player: {
     x: 2,
-    y: 1.5,
+    y: 10,
     width: 1,
     height: 1,
     speedX: 0,
@@ -38,26 +39,39 @@ const state: GameState = {
     sprite: "player",
   },
   scene: [
-    { sprite: "sky", x: 0, y: 0, width: 100, height: 100 },
-    { sprite: "grass", x: 0, y: 0, width: 100, height: 1, solid: true },
+    {
+      sprite: "sky",
+      x: -50,
+      y: 0,
+      width: Number.MAX_SAFE_INTEGER,
+      height: 100,
+    },
+    {
+      sprite: "grass",
+      x: -50,
+      y: 0,
+      width: Number.MAX_SAFE_INTEGER,
+      height: 1,
+      solid: true,
+    },
     ...pipes,
   ],
   gameOver: false,
 };
 
 const sprites: Record<string, string> = {
-  player: "#ffffff08",
-  grass: "#ffffff00",
-  sky: "#ffffff00",
-  pipe: "#ffffff08",
+  player: "#f00",
+  grass: "#0f0",
+  sky: "#00f",
+  pipe: "#fff",
 };
 
 const render: Data["render"] = (state, screen, resolution) => {
-  const shift = { x: 0, y: 0 }; // Parei aqui
+  const camera = { x: state.player.x - 5, y: 0 };
 
   const objects = [...state.scene, state.player];
   objects.forEach((object) => {
-    drawSprite(screen, object, resolution);
+    drawSprite(screen, object, camera, resolution);
   });
 };
 
@@ -69,7 +83,7 @@ const keyboardMap: Data["keyboardMap"] = {
 
 const commands: Data["commands"] = {
   Up: (state) => {
-    state.player.speedY = 0.3;
+    state.player.speedY = 0.1;
   },
 };
 
@@ -78,8 +92,8 @@ const update: Data["update"] = (state) => {
     return;
   }
 
-  state.player.speedY -= 0.01;
-  state.player.speedX = 0.05;
+  state.player.speedY -= 0.003;
+  state.player.speedX = 0.03;
   moveGameObject(state.player, state.scene);
 
   if (detectCollision(state.player, state.scene)) {
@@ -116,12 +130,13 @@ const hasCollided = (obj1: GameObject, obj2: GameObject) => {
 const drawSprite = (
   screen: CanvasRenderingContext2D,
   obj: GameObject,
+  camera: { x: number; y: number },
   resolution: { width: number; height: number }
 ) => {
   screen.fillStyle = sprites[obj.sprite];
   screen.fillRect(
-    (obj.x / 15) * resolution.width,
-    ((15 - obj.y - obj.height) / 15) * resolution.height,
+    ((obj.x - camera.x) / 15) * resolution.width,
+    ((15 - obj.y - obj.height + camera.y) / 15) * resolution.height,
     (obj.width / 15) * resolution.width,
     (obj.height / 15) * resolution.height
   );
