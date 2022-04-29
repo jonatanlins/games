@@ -24,19 +24,33 @@ interface Sprite {
 
 type Data = GameData<GameState>;
 
-const pipes: GameObject[] = Array(21)
+const pipes: GameObject[] = Array(100)
   .fill(0)
-  .flatMap((_, i) => {
-    const pipe = { x: (i + 2) * 7, width: 1, height: 10, enemy: true };
+  .flatMap((_, i): GameObject[] => {
+    const x = (i + 2) * 7;
+    const pipe = { x, width: 1, height: 10, enemy: true };
     const hole = Math.random() * 7 + 4;
     const size = 2;
+
+    if (i === 21 - 1) {
+      return [
+        {
+          sprite: "cake",
+          x: x - 2,
+          y: 1,
+          width: 5,
+          height: 5,
+        },
+      ];
+    }
+
     return [
       { ...pipe, sprite: "pipe_up", y: hole + size },
       { ...pipe, sprite: "pipe_down", y: hole - 10 - size },
     ];
   });
 
-const backgrounds: GameObject[] = Array(20)
+const backgrounds: GameObject[] = Array(1)
   .fill(0)
   .map((_, i) => ({
     sprite: "sky",
@@ -54,7 +68,7 @@ const foregrounds: GameObject[] = Array(20)
     y: 0,
     width: 20,
     height: 1,
-    solid: true,
+    enemy: true,
   }));
 
 const state: GameState = {
@@ -129,15 +143,13 @@ const render: Data["render"] = (state, screen, resolution) => {
 };
 
 const update: Data["update"] = (state) => {
-  if (state.gameOver) {
-    return;
-  }
+  if (state.gameOver) return;
 
   state.player.speedY -= 0.003;
   state.player.speedX = 0.04;
-  moveGameObject(state.player, state.scene);
+  const { collision } = moveGameObject(state.player, state.scene);
 
-  if (detectCollision(state.player, state.scene)) {
+  if (collision === "enemy") {
     state.gameOver = true;
   }
 };
@@ -150,6 +162,7 @@ const keyboardMap: Data["keyboardMap"] = {
 
 const commands: Data["commands"] = {
   Up: (state) => {
+    if (state.gameOver) return;
     state.player.speedY = 0.1;
   },
 };
@@ -165,7 +178,7 @@ const moveGameObject = (obj: GameObject, others: GameObject[]) => {
     obj.speedX = 0;
     obj.speedY = 0;
   }
-  return obj;
+  return { obj, collision };
 };
 
 const detectCollision = (
