@@ -27,75 +27,95 @@ type Data = GameData<GameState>;
 const pipes: GameObject[] = Array(21)
   .fill(0)
   .flatMap((_, i) => {
-    const pipe = { sprite: "pipe", x: (i + 2) * 7, width: 1, enemy: true };
+    const pipe = { x: (i + 2) * 7, width: 1, height: 10, enemy: true };
     const hole = Math.random() * 7 + 4;
     const size = 2;
     return [
-      { ...pipe, y: 0, height: hole - size },
-      { ...pipe, y: hole + size, height: 15 - hole - size },
+      { ...pipe, sprite: "pipe_up", y: hole + size },
+      { ...pipe, sprite: "pipe_down", y: hole - 10 - size },
     ];
   });
+
+const backgrounds: GameObject[] = Array(20)
+  .fill(0)
+  .map((_, i) => ({
+    sprite: "sky",
+    x: (i - 1) * 20,
+    y: 0,
+    width: 20,
+    height: 15,
+  }));
+
+const foregrounds: GameObject[] = Array(20)
+  .fill(0)
+  .map((_, i) => ({
+    sprite: "grass",
+    x: (i - 1) * 20,
+    y: 0,
+    width: 20,
+    height: 1,
+    solid: true,
+  }));
 
 const state: GameState = {
   player: {
     x: 2,
     y: 10,
     width: 1,
-    height: 1,
+    height: 57 / 79,
     speedX: 0,
     speedY: 0,
     sprite: "player",
   },
-  scene: [
-    {
-      sprite: "sky",
-      x: -50,
-      y: 0,
-      width: Number.MAX_SAFE_INTEGER,
-      height: 100,
-    },
-    {
-      sprite: "grass",
-      x: -50,
-      y: 0,
-      width: Number.MAX_SAFE_INTEGER,
-      height: 1,
-      solid: true,
-    },
-    ...pipes,
-  ],
+  scene: [...backgrounds, ...pipes, ...foregrounds],
   gameOver: false,
 };
 
 const spriteSheet1 = document.getElementById("sprites-01") as HTMLImageElement;
+const spriteSheet2 = document.getElementById("sprites-02") as HTMLImageElement;
+
 const sprites: Record<string, Sprite> = {
   player: {
     img: spriteSheet1,
     sX: 0,
     sY: 0,
-    sWidth: 20,
-    sHeight: 20,
-  },
-  grass: {
-    img: spriteSheet1,
-    sX: 0,
-    sY: 0,
-    sWidth: 20,
-    sHeight: 20,
+    sWidth: 74,
+    sHeight: 53,
   },
   sky: {
-    img: spriteSheet1,
+    img: spriteSheet2,
     sX: 0,
     sY: 0,
-    sWidth: 20,
-    sHeight: 20,
+    sWidth: 600,
+    sHeight: 450,
   },
-  pipe: {
-    img: spriteSheet1,
+  grass: {
+    img: spriteSheet2,
     sX: 0,
+    sY: 450,
+    sWidth: 600,
+    sHeight: 30,
+  },
+  pipe_up: {
+    img: spriteSheet1,
+    sX: 74 + 30,
     sY: 0,
-    sWidth: 20,
-    sHeight: 20,
+    sWidth: 30,
+    sHeight: 300,
+  },
+  pipe_down: {
+    img: spriteSheet1,
+    sX: 74,
+    sY: 0,
+    sWidth: 30,
+    sHeight: 300,
+  },
+  cake: {
+    img: spriteSheet1,
+    sX: 74 + 30 + 30,
+    sY: 0,
+    sWidth: 62,
+    sHeight: 62,
   },
 };
 
@@ -106,6 +126,20 @@ const render: Data["render"] = (state, screen, resolution) => {
   objects.forEach((object) => {
     drawSprite(screen, object, camera, resolution);
   });
+};
+
+const update: Data["update"] = (state) => {
+  if (state.gameOver) {
+    return;
+  }
+
+  state.player.speedY -= 0.003;
+  state.player.speedX = 0.04;
+  moveGameObject(state.player, state.scene);
+
+  if (detectCollision(state.player, state.scene)) {
+    state.gameOver = true;
+  }
 };
 
 const keyboardMap: Data["keyboardMap"] = {
@@ -120,25 +154,12 @@ const commands: Data["commands"] = {
   },
 };
 
-const update: Data["update"] = (state) => {
-  if (state.gameOver) {
-    return;
-  }
-
-  state.player.speedY -= 0.003;
-  state.player.speedX = 0.03;
-  moveGameObject(state.player, state.scene);
-
-  if (detectCollision(state.player, state.scene)) {
-    state.gameOver = true;
-  }
-};
-
 const moveGameObject = (obj: GameObject, others: GameObject[]) => {
   obj.x += obj.speedX || 0;
   obj.y += obj.speedY || 0;
 
-  if (detectCollision(obj, others)) {
+  const collision = detectCollision(obj, others);
+  if (collision) {
     obj.x -= obj.speedX || 0;
     obj.y -= obj.speedY || 0;
     obj.speedX = 0;
@@ -147,8 +168,18 @@ const moveGameObject = (obj: GameObject, others: GameObject[]) => {
   return obj;
 };
 
-const detectCollision = (player: GameObject, objects: GameObject[]) => {
-  return objects.some((obj) => obj.solid && hasCollided(player, obj));
+const detectCollision = (
+  player: GameObject,
+  objects: GameObject[]
+): "solid" | "enemy" | null => {
+  for (const obj of objects) {
+    if (!obj.solid && !obj.enemy) continue;
+    if (hasCollided(player, obj)) {
+      if (obj.enemy) return "enemy";
+      if (obj.solid) return "solid";
+    }
+  }
+  return null;
 };
 
 const hasCollided = (obj1: GameObject, obj2: GameObject) => {
@@ -174,7 +205,7 @@ const drawSprite = (
     sprite.sY,
     sprite.sWidth,
     sprite.sHeight,
-    ((obj.x - camera.x) / 15) * resolution.width,
+    obj.sprite === "sky" ? 0 : ((obj.x - camera.x) / 15) * resolution.width,
     ((15 - obj.y - obj.height + camera.y) / 15) * resolution.height,
     (obj.width / 15) * resolution.width,
     (obj.height / 15) * resolution.height
@@ -182,8 +213,9 @@ const drawSprite = (
 };
 
 export const createGame = (canvas: HTMLCanvasElement) => {
-  canvas.width = 500;
-  canvas.height = 500;
+  const size = Math.min(window.innerWidth, window.innerHeight);
+  canvas.width = size;
+  canvas.height = size;
 
   const gameData: Data = {
     canvas,
