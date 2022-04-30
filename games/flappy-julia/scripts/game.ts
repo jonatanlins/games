@@ -2,6 +2,7 @@ import { GameEngine, GameData, GameObject } from "./engine";
 
 interface GameState {
   gameOver: boolean;
+  score: number;
   player: {
     sprite: string;
     x: number;
@@ -27,7 +28,7 @@ type Data = GameData<GameState>;
 const pipes: GameObject[] = Array(100)
   .fill(0)
   .flatMap((_, i): GameObject[] => {
-    const x = (i + 2) * 7;
+    const x = i * 7 + 14;
     const pipe = { x, width: 1, height: 10, enemy: true };
     const hole = Math.random() * 7 + 4;
     const size = 2;
@@ -72,11 +73,12 @@ const foregrounds: GameObject[] = Array(20)
   }));
 
 const state: GameState = {
+  score: 0,
   player: {
     x: 2,
     y: 10,
-    width: 1,
-    height: 57 / 79,
+    width: 74 / 60,
+    height: 53 / 60,
     speedX: 0,
     speedY: 0,
     sprite: "player",
@@ -140,6 +142,8 @@ const render: Data["render"] = (state, screen, resolution) => {
   objects.forEach((object) => {
     drawSprite(screen, object, camera, resolution);
   });
+
+  drawText(screen, `${state.score}`, { x: 7.5, y: 11 }, 3, resolution);
 };
 
 const update: Data["update"] = (state) => {
@@ -152,6 +156,8 @@ const update: Data["update"] = (state) => {
   if (collision === "enemy") {
     state.gameOver = true;
   }
+
+  state.score = Math.floor(Math.max((state.player.x - 14) / 7 + 1, 0));
 };
 
 const keyboardMap: Data["keyboardMap"] = {
@@ -204,6 +210,28 @@ const hasCollided = (obj1: GameObject, obj2: GameObject) => {
   );
 };
 
+const drawText = (
+  screen: CanvasRenderingContext2D,
+  text: string,
+  position: { x: number; y: number },
+  size: number,
+  resolution: { width: number; height: number }
+) => {
+  const x = (position.x / 15) * resolution.width;
+  const y = ((15 - position.y) / 15) * resolution.height;
+  const fontSize = Math.floor((size / 15) * resolution.width);
+
+  screen.textAlign = "center";
+  screen.font = `${fontSize}px Pixeboy`;
+
+  screen.fillStyle = "#fff";
+  screen.fillText(text, x, y);
+
+  screen.lineWidth = fontSize / 40;
+  screen.strokeStyle = "#000";
+  screen.strokeText(text, x, y);
+};
+
 const drawSprite = (
   screen: CanvasRenderingContext2D,
   obj: GameObject,
@@ -226,7 +254,7 @@ const drawSprite = (
 };
 
 export const createGame = (canvas: HTMLCanvasElement) => {
-  const size = Math.min(window.innerWidth, window.innerHeight);
+  const size = 450 * 4;
   canvas.width = size;
   canvas.height = size;
 
